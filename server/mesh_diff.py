@@ -18,9 +18,9 @@ import os
 
 
 HOST = "speckle.xyz"
-STREAM_ID = "8325294b8f"
-COMMIT_ID = "d930269725"  # current commit
-PREV_COMMIT_ID = "e9d8f67969"  # previous commit
+#STREAM_ID = "8325294b8f"
+#COMMIT_ID = "d930269725"  # current commit
+#PREV_COMMIT_ID = "e9d8f67969"  # previous commit
 DIFF_BRANCH = "diff"
 COLORS = [-6426, -13108, -19790, -26215, -32640, -39322, -45747, -52429, -59111, -65536]
 WHITE = -1
@@ -33,7 +33,7 @@ def get_authenticated_client() -> SpeckleClient:
     return client
 
 def receive_data(
-    client: SpeckleClient, stream_id: str = STREAM_ID, commit_id: str = COMMIT_ID
+    client: SpeckleClient, stream_id: str, commit_id: str
 ) -> Any:
     transport = ServerTransport(client, stream_id)
 
@@ -96,13 +96,18 @@ def find_closest_point(current: Point, points: List[Point]):
     return smallest_distance
 
 
-def compare_meshes():
+def compare_meshes(stream_id: str, commit_current: str, commit_previous: str):
     client = get_authenticated_client()
 
+    # see if existing diff commit already exists
+    # query for latest x commits in diff branch
+    # read commit message & parse 
+    # return url if found
+
     # get meshes from commits
-    previous_commit = receive_data(client, STREAM_ID, PREV_COMMIT_ID)
+    previous_commit = receive_data(client, stream_id, commit_previous)
     previous_meshes = get_all_meshes(previous_commit)
-    current_commit = receive_data(client, STREAM_ID, COMMIT_ID)
+    current_commit = receive_data(client, stream_id, commit_current)
     current_meshes = get_all_meshes(current_commit)
 
     # pre process meshes in the current commit to check for same object ID (this means obj hasn't changed) - skip these
@@ -170,18 +175,18 @@ def compare_meshes():
         prev_meshes.append(mesh)
 
     # create a new commit with the diff meshes and changed edges
-    send_diff_data(diff_meshes, match_meshes, prev_meshes)
+    return send_diff_data(stream_id, commit_current, commit_previous, diff_meshes, match_meshes, prev_meshes)
 
 
-def send_diff_data(meshes: List[Mesh], unchanged: List[Mesh], prev: List[Mesh]):
+def send_diff_data(stream_id: str, commit_current: str, commit_previous: str, meshes: List[Mesh], unchanged: List[Mesh], prev: List[Mesh]):
     client = get_authenticated_client()
 
     # create a branch if necessary
-    branches = client.branch.list(STREAM_ID)
+    branches = client.branch.list(stream_id)
     has_res_branch = any(b.name == DIFF_BRANCH for b in branches)
     if not has_res_branch:
         client.branch.create(
-            STREAM_ID, name=DIFF_BRANCH, description="all your stream diff results"
+            stream_id, name=DIFF_BRANCH, description="all your stream diff results"
         )
 
     # create a commit with message "current_commit_id - previous_commit_id"
@@ -190,19 +195,18 @@ def send_diff_data(meshes: List[Mesh], unchanged: List[Mesh], prev: List[Mesh]):
     base["same"] = unchanged
     base["ref"] = prev
 
-    transport = ServerTransport(client=client, stream_id=STREAM_ID)
+    transport = ServerTransport(client=client, stream_id=stream_id)
 
     hash = operations.send(base=base, transports=[transport])
 
     commit_id = client.commit.create(
-        STREAM_ID,
+        stream_id,
         hash, # object id
         DIFF_BRANCH,
-        message= COMMIT_ID + "-" + PREV_COMMIT_ID
+        message= commit_current + "-" + commit_previous
     )
 
-    return 'https://speckle.xyz/streams/' + STREAM_ID + '/branches/' + DIFF_BRANCH
+    return 'https://speckle.xyz/streams/' + stream_id + '/commits/' + commit_id 
 
-compare_meshes()
     
 

@@ -1,4 +1,4 @@
-<template>
+<template lang="html">
   <div class="ml-4 my-2">
     <b>{{ keyName }}</b>
     <code class="ml-4">{{ value }}</code>

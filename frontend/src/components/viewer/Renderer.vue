@@ -1,20 +1,20 @@
 <template lang="html">
-  <v-sheet style="height: 100%; position: relative" class="transparent">
+  <v-container fluid fill-height class="transparent pa-0">
     <v-alert
-        v-show="showAlert"
-        text
-        type="warning"
-        dismissible
-        dense
-        style="position: absolute; z-index: 20; width: 100%"
-        class="caption"
+      v-show="showAlert"
+      text
+      type="warning"
+      dismissible
+      dense
+      style="position: absolute; z-index: 20; width: 100%"
+      class="caption"
     >
       {{ alertMessage }}
     </v-alert>
     <div
-        id="rendererparent"
-        ref="rendererparent"
-        :class="`${fullScreen ? 'fullscreen' : ''} ${darkMode ? 'dark' : ''}`"
+      id="rendererparent"
+      ref="rendererparent"
+      :class="`${fullScreen ? 'fullscreen' : ''} ${darkMode ? 'dark' : ''}`"
     >
       <v-fade-transition>
         <div v-show="!hasLoadedModel" class="overlay cover-all">
@@ -24,11 +24,11 @@
           <div class="overlay-abs radial-bg"></div>
           <div class="overlay-abs" style="pointer-events: none">
             <v-btn
-                color="primary"
-                class="vertical-center"
-                style="pointer-events: all"
-                small
-                @click="load()"
+              color="primary"
+              class="vertical-center"
+              style="pointer-events: all"
+              small
+              @click="load()"
             >
               <v-icon dense>mdi-play</v-icon>
             </v-btn>
@@ -36,27 +36,27 @@
         </div>
       </v-fade-transition>
       <v-progress-linear
-          v-if="hasLoadedModel && loadProgress < 99"
-          v-model="loadProgress"
-          height="4"
-          rounded
-          class="vertical-center elevation-10"
-          style="position: absolute; width: 80%; left: 10%; opacity: 0.5"
+        v-if="hasLoadedModel && loadProgress < 99"
+        v-model="loadProgress"
+        height="4"
+        rounded
+        class="vertical-center elevation-10"
+        style="position: absolute; width: 80%; left: 10%; opacity: 0.5"
       ></v-progress-linear>
 
       <v-card
-          elevation="0"
-          v-show="hasLoadedModel && loadProgress >= 99"
-          style="position: absolute; bottom: 0; z-index: 2; width: 100%"
-          class="pa-0 text-center transparent elevation-0 pb-3"
+        elevation="0"
+        v-show="hasLoadedModel && loadProgress >= 99"
+        style="position: absolute; bottom: 0; z-index: 2; width: 100%"
+        class="pa-0 text-center transparent elevation-0 pb-3"
       >
         <v-btn-toggle class="elevation-0" style="z-index: 100">
           <v-btn
-              :disabled="selectedObjects.length === 0"
-              v-if="(showSelectionHelper || fullScreen)"
-              small
-              color="primary"
-              @click="showObjectDetails = !showObjectDetails"
+            :disabled="selectedObjects.length === 0"
+            v-if="showSelectionHelper || fullScreen"
+            small
+            color="primary"
+            @click="showObjectDetails = !showObjectDetails"
           >
             <span v-if="!isSmall">Selection Details</span>
             <v-icon v-else small>mdi-cube</v-icon>
@@ -67,9 +67,9 @@
               <v-tooltip top>
                 <template #activator="{ on: onTooltip, attrs: tooltipAttrs }">
                   <v-btn
-                      small
-                      v-bind="{ ...tooltipAttrs, ...menuAttrs }"
-                      v-on="{ ...onTooltip, ...onMenu }"
+                    small
+                    v-bind="{ ...tooltipAttrs, ...menuAttrs }"
+                    v-on="{ ...onTooltip, ...onMenu }"
                   >
                     <v-icon small>mdi-camera</v-icon>
                   </v-btn>
@@ -95,7 +95,11 @@
                 <v-list-item-title>Right</v-list-item-title>
               </v-list-item>
               <v-divider v-if="namedViews.length !== 0"></v-divider>
-              <v-list-item v-for="view in namedViews" :key="view.id" @click="setNamedView(view.id)">
+              <v-list-item
+                v-for="view in namedViews"
+                :key="view.id"
+                @click="setNamedView(view.id)"
+              >
                 <v-list-item-title>{{ view.name }}</v-list-item-title>
               </v-list-item>
             </v-list>
@@ -119,40 +123,54 @@
           </v-tooltip>
           <v-tooltip top>
             <template #activator="{ on, attrs }">
-              <v-btn small v-bind="attrs" @click="fullScreen = !fullScreen" v-on="on">
-                <v-icon small>{{ fullScreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}</v-icon>
+              <v-btn
+                small
+                v-bind="attrs"
+                @click="fullScreen = !fullScreen"
+                v-on="on"
+              >
+                <v-icon small>
+                  {{ fullScreen ? "mdi-fullscreen-exit" : "mdi-fullscreen" }}
+                </v-icon>
               </v-btn>
             </template>
             Full screen
           </v-tooltip>
           <v-tooltip top>
             <template #activator="{ on, attrs }">
-              <v-btn v-bind="attrs" small @click="showHelp = !showHelp" v-on="on">
+              <v-btn
+                v-bind="attrs"
+                small
+                @click="showHelp = !showHelp"
+                v-on="on"
+              >
                 <v-icon small>mdi-help</v-icon>
               </v-btn>
             </template>
             Show viewer help
           </v-tooltip>
           <v-dialog
-              v-model="showObjectDetails"
-              width="500"
-              :fullscreen="$vuetify.breakpoint.smAndDown"
+            v-model="showObjectDetails"
+            width="500"
+            :fullscreen="$vuetify.breakpoint.smAndDown"
           >
             <v-card>
               <v-toolbar elevation="0">
                 <v-toolbar-title>Selection Details</v-toolbar-title>
                 <v-spacer></v-spacer>
-                <v-btn icon @click="showObjectDetails = false"><v-icon>mdi-close</v-icon></v-btn>
+                <v-btn icon @click="showObjectDetails = false">
+                  <v-icon>mdi-close</v-icon>
+                </v-btn>
               </v-toolbar>
               <v-sheet>
                 <div v-if="selectedObjects.length !== 0">
                   <object-simple-viewer
-                      v-for="(obj, ind) in selectedObjects"
-                      :key="obj.id + ind"
-                      :value="obj"
-                      :stream-id="$route.params.id"
-                      :key-name="`Selected Object ${ind + 1}`"
-                      force-expand
+                    v-for="(obj, ind) in selectedObjects"
+                    :key="obj.id + ind"
+                    :value="obj"
+                    :stream-id="$route.params.id"
+                    :key-name="`Selected Object ${ind + 1}`"
+                    force-expand
                   />
                 </div>
               </v-sheet>
@@ -187,16 +205,16 @@
         </v-btn-toggle>
       </v-card>
     </div>
-  </v-sheet>
+  </v-container>
 </template>
 <script>
-import throttle from 'lodash.throttle'
-import {Viewer} from '@speckle/viewer'
-import {TOKEN} from "@/speckleUtils";
-import ObjectSimpleViewer from "@/components/ObjectSimpleViewer";
+import throttle from "lodash.throttle"
+import { Viewer } from "@speckle/viewer"
+import { TOKEN } from "@/speckleUtils"
+import ObjectSimpleViewer from "@/components/viewer/ObjectSimpleViewer"
 
 export default {
-  components: {ObjectSimpleViewer},
+  components: { ObjectSimpleViewer },
   props: {
     autoLoad: {
       type: Boolean,
@@ -235,7 +253,10 @@ export default {
   },
   computed: {
     isSmall() {
-      return this.$vuetify.breakpoint.name === 'xs' || this.$vuetify.breakpoint.name === 'sm'
+      return (
+        this.$vuetify.breakpoint.name === "xs" ||
+        this.$vuetify.breakpoint.name === "sm"
+      )
     },
     darkMode() {
       return this.$vuetify.theme.dark
@@ -254,7 +275,7 @@ export default {
         this.namedViews.push(...views)
       }
     },
-    objectUrls(){
+    objectUrls() {
       this.unloadData()
       this.load()
     }
@@ -268,11 +289,11 @@ export default {
     // - initialise the actual renderer **once** (per app lifecycle, on refresh it's fine)
     // - juggle the container div out of this component's dom when the component is managed out by vue
     // - juggle the container div back in of this component's dom when it's back.
-    let renderDomElement = document.getElementById('renderer')
+    let renderDomElement = document.getElementById("renderer")
 
     if (!renderDomElement) {
-      renderDomElement = document.createElement('div')
-      renderDomElement.id = 'renderer'
+      renderDomElement = document.createElement("div")
+      renderDomElement.id = "renderer"
     }
 
     this.domElement = renderDomElement
@@ -284,13 +305,12 @@ export default {
 
     window.__viewer.onWindowResize()
     this.setupEvents()
-
   },
   beforeDestroy() {
     // NOTE: here's where we juggle the container div out, and do cleanup on the
     // viewer end.
     // hide renderer dom element.
-    this.domElement.style.display = 'none'
+    this.domElement.style.display = "none"
     // move renderer dom element outside this component so it doesn't get deleted.
     document.body.appendChild(this.domElement)
   },
@@ -308,26 +328,26 @@ export default {
       window.__viewer.interactions.toggleSectionBox()
     },
     setupEvents() {
-      window.__viewer.on('load-warning', ({ message }) => {
+      window.__viewer.on("load-warning", ({ message }) => {
         this.alertMessage = message
         this.showAlert = true
       })
 
       window.__viewer.on(
-          'load-progress',
-          throttle(
-              function (args) {
-                this.loadProgress = args.progress * 100
-                this.zoomEx()
-              }.bind(this),
-              200
-          )
+        "load-progress",
+        throttle(
+          function(args) {
+            this.loadProgress = args.progress * 100
+            this.zoomEx()
+          }.bind(this),
+          200
+        )
       )
 
-      window.__viewer.on('select', (objects) => {
+      window.__viewer.on("select", objects => {
         this.selectedObjects.splice(0, this.selectedObjects.length)
         this.selectedObjects.push(...objects)
-        this.$emit('selection', this.selectedObjects)
+        this.$emit("selection", this.selectedObjects)
       })
     },
     load() {
@@ -408,18 +428,18 @@ export default {
 .radial-bg {
   transition: all 0.5s ease-out;
   background: radial-gradient(
-      circle,
-      rgba(60, 94, 128, 0.8519782913165266) 0%,
-      rgba(63, 123, 135, 0.13489145658263302) 100%
+    circle,
+    rgba(60, 94, 128, 0.8519782913165266) 0%,
+    rgba(63, 123, 135, 0.13489145658263302) 100%
   );
   opacity: 1;
 }
 
 .radial-bg:hover {
   background: radial-gradient(
-      circle,
-      rgba(60, 94, 128, 0.8519782913165266) 0%,
-      rgba(63, 123, 135, 0.13489145658263302) 100%
+    circle,
+    rgba(60, 94, 128, 0.8519782913165266) 0%,
+    rgba(63, 123, 135, 0.13489145658263302) 100%
   );
   opacity: 0.5;
 }

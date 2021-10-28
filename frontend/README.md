@@ -45,6 +45,10 @@ Give Speckle a try in no time by:
 
 # Repo structure
 
+> TBD!!!
+
+- `frontend/`
+- `backend/`
 
 ### Other repos
 

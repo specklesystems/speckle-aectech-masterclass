@@ -1,4 +1,4 @@
-<template>
+<template lang="html">
   <v-card :class="`my-1 pa-0 ${localExpand ? 'elevation-3' : 'elevation-0'} my-0`">
     <v-card-title v-if="object">
       <v-chip color="" @click="toggleLoadExpand">

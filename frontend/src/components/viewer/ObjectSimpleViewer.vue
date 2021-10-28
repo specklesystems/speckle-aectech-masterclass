@@ -1,4 +1,4 @@
-<template>
+<template lang="html">
   <v-card elevation="0" :class="`my-1 pa-0 my-0`">
     <v-card-title>
       <v-chip color="" @click="toggleLoadExpand">

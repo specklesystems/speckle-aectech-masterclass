@@ -1,9 +1,24 @@
 <template lang="html">
   <v-container fill-height fluid class="pa-0">
     <div class="float-center-top">
-      <CommitPanel></CommitPanel>
+      <CommitPanel v-if="stream" :commits="stream.commits.items"></CommitPanel>
     </div>
-    <Renderer v-if="refObj" :object-urls="[objectUrl]"></Renderer>
+    <v-row class="fill-height" no-gutters>
+      <v-col fill-height cols="6">
+        <Renderer
+          v-if="stream"
+          :object-urls="[objectUrl(0)]"
+          show-selection-helper
+        ></Renderer>
+      </v-col>
+      <v-col fill-height cols="6">
+        <Renderer
+          v-if="stream"
+          :object-urls="[objectUrl(1)]"
+          show-selection-helper
+        ></Renderer>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -33,18 +48,18 @@ export default {
   computed: {
     streamId() {
       return this.$route.params.id
-    },
-    objectUrl() {
-      return [
-        `${this.serverUrl}/streams/${this.stream.id}/objects/${this.selectedCommit.referencedObject}`
-      ]
     }
   },
   methods: {
     async getStream() {
-      var res = await getStreamCommits(this.streamId, 1, null)
+      var res = await getStreamCommits(this.streamId, 10, null)
       this.selectedCommit = res.data.stream.commits.items[0]
       this.stream = res.data.stream
+    },
+    objectUrl(i) {
+      return [
+        `${this.serverUrl}/streams/${this.stream.id}/objects/${this.stream.commits.items[i].referencedObject}`
+      ]
     }
   },
   watch: {
@@ -81,6 +96,7 @@ export default {
   position: absolute;
   display: flex;
   left: 50%;
+  max-width: 80%;
   transform: translatex(-50%);
   top: 1em;
   z-index: 3;

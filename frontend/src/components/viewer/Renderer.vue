@@ -16,6 +16,7 @@
       ref="rendererparent"
       :class="`${fullScreen ? 'fullscreen' : ''} ${darkMode ? 'dark' : ''}`"
     >
+      <div id="renderer" ref="renderer"></div>
       <v-fade-transition>
         <div v-show="!hasLoadedModel" class="overlay cover-all">
           <transition name="fade">
@@ -248,7 +249,8 @@ export default {
       selectedObjects: [],
       showObjectDetails: false,
       hasImg: false,
-      namedViews: []
+      namedViews: [],
+      viewer: null
     }
   },
   computed: {
@@ -267,11 +269,11 @@ export default {
       this.unloadData()
     },
     fullScreen() {
-      setTimeout(() => window.__viewer.onWindowResize(), 20)
+      setTimeout(() => this.viewer.onWindowResize(), 20)
     },
     loadProgress(newVal) {
       if (newVal >= 99) {
-        let views = window.__viewer.interactions.getViews()
+        let views = this.viewer.interactions.getViews()
         this.namedViews.push(...views)
       }
     },
@@ -282,28 +284,13 @@ export default {
   },
   // TODO: pause rendering on destroy, reinit on mounted.
   async mounted() {
-    // NOTE: we're doing some globals and dom shennanigans in here for the purpose
-    // of having a unique global renderer and it's container dom element. The principles
-    // are simple enough:
-    // - create a single 'renderer' container div
-    // - initialise the actual renderer **once** (per app lifecycle, on refresh it's fine)
-    // - juggle the container div out of this component's dom when the component is managed out by vue
-    // - juggle the container div back in of this component's dom when it's back.
-    let renderDomElement = document.getElementById("renderer")
+    this.domElement = this.$refs.renderer
 
-    if (!renderDomElement) {
-      renderDomElement = document.createElement("div")
-      renderDomElement.id = "renderer"
+    if (!this.viewer) {
+      this.viewer = new Viewer({ container: this.$refs.renderer })
     }
 
-    this.domElement = renderDomElement
-    this.$refs.rendererparent.appendChild(renderDomElement)
-
-    if (!window.__viewer) {
-      window.__viewer = new Viewer({ container: renderDomElement })
-    }
-
-    window.__viewer.onWindowResize()
+    this.viewer.onWindowResize()
     this.setupEvents()
   },
   beforeDestroy() {
@@ -316,24 +303,24 @@ export default {
   },
   methods: {
     zoomEx() {
-      window.__viewer.interactions.zoomExtents()
+      this.viewer.interactions.zoomExtents()
     },
     setView(view) {
-      window.__viewer.interactions.rotateTo(view)
+      this.viewer.interactions.rotateTo(view)
     },
     setNamedView(id) {
-      window.__viewer.interactions.setView(id)
+      this.viewer.interactions.setView(id)
     },
     sectionToggle() {
-      window.__viewer.interactions.toggleSectionBox()
+      this.viewer.interactions.toggleSectionBox()
     },
     setupEvents() {
-      window.__viewer.on("load-warning", ({ message }) => {
+      this.viewer.on("load-warning", ({ message }) => {
         this.alertMessage = message
         this.showAlert = true
       })
 
-      window.__viewer.on(
+      this.viewer.on(
         "load-progress",
         throttle(
           function(args) {
@@ -344,7 +331,7 @@ export default {
         )
       )
 
-      window.__viewer.on("select", objects => {
+      this.viewer.on("select", objects => {
         this.selectedObjects.splice(0, this.selectedObjects.length)
         this.selectedObjects.push(...objects)
         this.$emit("selection", this.selectedObjects)
@@ -352,16 +339,16 @@ export default {
     },
     load() {
       if (!this.objectUrls || this.objectUrls.length === 0) return
-      window.__viewer.onWindowResize()
+      this.viewer.onWindowResize()
       this.objectUrls?.forEach(url => {
-        window.__viewer.loadObject(url, localStorage.getItem(TOKEN))
-        window.__viewerLastLoadedUrl = url
+        this.viewer.loadObject(url, localStorage.getItem(TOKEN))
+        this.viewerLastLoadedUrl = url
       })
       this.setupEvents()
       this.hasLoadedModel = true
     },
     unloadData() {
-      window.__viewer.sceneManager.removeAllObjects()
+      this.viewer.sceneManager.removeAllObjects()
       this.hasLoadedModel = false
       this.loadProgress = 0
       this.namedViews.splice(0, this.namedViews.length)

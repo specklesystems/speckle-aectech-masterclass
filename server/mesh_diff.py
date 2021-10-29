@@ -1,37 +1,29 @@
-from array import array
-from hashlib import new
-from logging import NullHandler
-from types import AsyncGeneratorType
 from typing import Any, List
-from math import floor
-
+import math
 from specklepy.api import operations
 from specklepy.api.client import SpeckleClient
-from specklepy.api.credentials import get_default_account
 from specklepy.api.models import Branch
-from specklepy.api.resources import stream
 from specklepy.transports.server import ServerTransport
-from specklepy.objects.geometry import GEOMETRY, Box, Brep, Point, Mesh, Line
+from specklepy.objects.geometry import Brep, Point, Mesh
 from specklepy.objects import Base
 from specklepy.objects.other import RenderMaterial
 
-import os
-
-URL = 'https://speckle.xyz/streams/'
-HOST = "latest.speckle.dev"
-STREAM_ID = "8325294b8f"
-COMMIT_ID = "c207299871"  # current commit
-PREV_COMMIT_ID = "b9f376d75d"  # previous commit
+HOST = "https://speckle.xyz"
 DIFF_BRANCH = "diff"
 COLORS = [-6426, -13108, -19790, -26215, -
           32640, -39322, -45747, -52429, -59111, -65536]
 WHITE = -1
+CLIENT: SpeckleClient = None
+
+_STREAM_ID: str = None
+_COMMIT_CURRENT: str = None
+_COMMIT_PREV: str = None
 
 
-def get_authenticated_client(token: str) -> SpeckleClient:
-    client = SpeckleClient(host=HOST)
-    client.authenticate(token=token)
-    return client
+def authenticate(token: str) -> SpeckleClient:
+    global CLIENT
+    CLIENT = SpeckleClient(host=HOST)
+    CLIENT.authenticate(token=token)
 
 
 def receive_data(
@@ -47,6 +39,7 @@ def receive_data(
 
     return res
 
+
 def get_all_meshes(child: Base):
     meshes = []
 
@@ -57,10 +50,11 @@ def get_all_meshes(child: Base):
             if isinstance(prop, Brep):
                 if not hasattr(prop, "displayMesh"):
                     break
-                meshes.append((prop.displayMesh, prop.id, prop.applicationId, prop))
+                meshes.append((prop.displayMesh, prop.id,
+                              prop.applicationId, prop))
             elif isinstance(prop, Mesh):
                 meshes.append((prop, prop.id, prop.applicationId))
-        elif isinstance(prop, list):  
+        elif isinstance(prop, list):
             for p in prop:
                 if isinstance(p, Brep):
                     if not hasattr(p, "displayMesh"):
@@ -101,36 +95,45 @@ def find_closest_point(current: Point, points: List[Point]):
         smallest_distance = d
     return smallest_distance
 
-def check_existing_commits(
-    client: SpeckleClient, stream_id: str, commit_current: str, commit_previous: str
-) -> Any:
-    transport = ServerTransport(client, stream_id)
 
-    branch_commits: Branch = client.branch.get(stream_id, DIFF_BRANCH, 50)
-    
+def check_existing_commits() -> Any:
+    return None
+    branch_commits: Branch = CLIENT.branch.get(_STREAM_ID, DIFF_BRANCH, 50)
+
     for commit in branch_commits.commits.items:
-        if commit.message == f"{commit_current}-{commit_previous}":
+        if commit.message == f"{_COMMIT_CURRENT}-{_COMMIT_PREV}":
+            print(f"Returning existing diff: {commit.id}")
             return commit.id
 
     return None
 
 
 def compare_meshes(stream_id: str, commit_current: str, commit_previous: str):
-    client = get_authenticated_client()
+    """
+    Compares the meshes from the first commit against the second, and sends the result to the `diff` branch.
+    It returns the commit url of the diff.
+    """
+    # Set the global variables
+    global _STREAM_ID, _COMMIT_CURRENT, _COMMIT_PREV
+    _STREAM_ID = stream_id
+    _COMMIT_CURRENT = commit_current
+    _COMMIT_PREV = commit_previous
 
     # see if existing diff commit already exists
     # query for latest x commits in diff branch
     # read commit message & parse
     # return url if found
-    existing_commit = check_existing_commits(client, stream_id, commit_current, commit_previous)
+
+    existing_commit = check_existing_commits()
     if existing_commit is not None:
-        url = URL + stream_id + '/commits/' + existing_commit 
+        url = f"{HOST}/streams/{_STREAM_ID}/commits/{existing_commit}"
         return url
 
+    print("Did not find existing diff, processing commits now....")
     # get meshes from commits
-    previous_commit = receive_data(client, stream_id, commit_previous)
+    previous_commit = receive_data(CLIENT, _STREAM_ID, commit_previous)
     previous_meshes = get_all_meshes(previous_commit)
-    current_commit = receive_data(client, stream_id, commit_current)
+    current_commit = receive_data(CLIENT, _STREAM_ID, commit_current)
     current_meshes = get_all_meshes(current_commit)
 
     # pre process meshes in the current commit to check for same object ID (this means obj hasn't changed) - skip these
@@ -138,7 +141,7 @@ def compare_meshes(stream_id: str, commit_current: str, commit_previous: str):
     matched_current_indices = []
     matched_previous_indices = []
     paired_current_indices = []
-    paired_previous_indices =[]
+    paired_previous_indices = []
     for i in range(0, len(current_meshes), 1):
         for j in range(0, len(previous_meshes), 1):
             if current_meshes[i][1] == previous_meshes[j][1]:
@@ -169,7 +172,7 @@ def compare_meshes(stream_id: str, commit_current: str, commit_previous: str):
     same_meshes = []
     ref_meshes = []
     diff_mesh_pairs = []
-    diff_mesh_ref_indices = [] # the corresponding ref pair mesh to diff mesh pairs
+    diff_mesh_ref_indices = []  # the corresponding ref pair mesh to diff mesh pairs
     for i in range(0, len(current_meshes), 1):
         mesh = current_meshes[i][0]
 
@@ -189,16 +192,19 @@ def compare_meshes(stream_id: str, commit_current: str, commit_previous: str):
         paired_ref_mesh_index = None
         is_paired = False
         if paired_current_indices.__contains__(i):
-            paired_ref_mesh_index = paired_previous_indices[paired_current_indices.index(i)]
-            paired_mesh_points = get_all_points([previous_meshes[paired_ref_mesh_index][0]])
+            paired_ref_mesh_index = paired_previous_indices[paired_current_indices.index(
+                i)]
+            paired_mesh_points = get_all_points(
+                [previous_meshes[paired_ref_mesh_index][0]])
             is_paired = True
 
         for vertex in vertices:
             if is_paired:
-                 diff_values.append(find_closest_point(vertex, paired_mesh_points))
+                diff_values.append(find_closest_point(
+                    vertex, paired_mesh_points))
             else:
                 diff_values.append(find_closest_point(vertex, ref_pool))
-        
+
         # determine color value for vertex by remapping domain
         changed = False
         bin_size = max(diff_values) / len(COLORS)
@@ -206,20 +212,19 @@ def compare_meshes(stream_id: str, commit_current: str, commit_previous: str):
             if diff_values[i] == 0:
                 continue
             else:
-                index = floor(diff_values[i] / bin_size)
+                index = math.floor(diff_values[i] / bin_size)
                 if index == len(COLORS):
                     index -= 1
                 diff_mesh_colors[i] = COLORS[index]
                 changed = True
-        
-        
-        if not changed: # if hasn't changed, append to same list
+
+        if not changed:  # if hasn't changed, append to same list
             mesh.renderMaterial = ghosted
             if is_paired:
                 matched_previous_indices.append(paired_ref_mesh_index)
             same_meshes.append(mesh)
 
-        else: # set colors and add mesh to diff list or paired diff list
+        else:  # set colors and add mesh to diff list or paired diff list
             diff_mesh.colors = diff_mesh_colors
             if is_paired:
                 diff_mesh_pairs.append(diff_mesh)
@@ -230,7 +235,8 @@ def compare_meshes(stream_id: str, commit_current: str, commit_previous: str):
     # process reference meshes
     diff_mesh_refs = []
     for j in range(0, len(previous_meshes)):
-        if matched_previous_indices.__contains__(j) or diff_mesh_ref_indices.__contains__(j): # skip matched reference meshes and paired refs
+        # skip matched reference meshes and paired refs
+        if matched_previous_indices.__contains__(j) or diff_mesh_ref_indices.__contains__(j):
             continue
         mesh = previous_meshes[j][0]
         mesh.renderMaterial = ghosted
@@ -241,23 +247,29 @@ def compare_meshes(stream_id: str, commit_current: str, commit_previous: str):
             diff_mesh_refs.append(mesh[3])
         else:
             diff_mesh_refs.append(mesh[0])
-    
+
     # get units from first mesh in current commit
     units = current_meshes[0][0].units
 
     # create a new commit with the diff meshes
-    return send_diff_data(stream_id, commit_current, commit_previous, units, diff_meshes, diff_mesh_pairs, diff_mesh_refs, same_meshes, ref_meshes)
+    return send_diff_data(units, diff_meshes, diff_mesh_pairs, diff_mesh_refs, same_meshes, ref_meshes)
 
 
-def send_diff_data(stream_id: str, commit_current: str, commit_previous: str, units: str, changed: List[Mesh], changed_pairs: List[Mesh], ref_pairs: List[Base], unchanged: List[Mesh], ref: List[Mesh]):
-    client = get_authenticated_client()
-
+def send_diff_data(
+    units: str,
+    changed: List[Mesh],
+    changed_pairs: List[Mesh],
+    ref_pairs: List[Base],
+    unchanged: List[Mesh],
+    ref: List[Mesh]
+):
+    """Sends the data resulting from the diff operation to the 'diff' branch"""
     # create a branch if necessary
-    branches = client.branch.list(stream_id)
+    branches = CLIENT.branch.list(_STREAM_ID)
     has_res_branch = any(b.name == DIFF_BRANCH for b in branches)
     if not has_res_branch:
-        client.branch.create(
-            stream_id, name=DIFF_BRANCH, description="all your stream diff results"
+        CLIENT.branch.create(
+            _STREAM_ID, name=DIFF_BRANCH, description="all your stream diff results"
         )
 
     # create a commit with message "current_commit_id - previous_commit_id"
@@ -272,19 +284,16 @@ def send_diff_data(stream_id: str, commit_current: str, commit_previous: str, un
     base["same"] = unchanged
     base["ref"] = ref
 
-    transport = ServerTransport(client=client, stream_id=stream_id)
+    transport = ServerTransport(client=CLIENT, stream_id=_STREAM_ID)
 
-    hash = operations.send(base=base, transports=[transport])
+    object_id = operations.send(base=base, transports=[transport])
 
-    commit_id = client.commit.create(
-        stream_id,
-        hash,  # object id
+    commit_id = CLIENT.commit.create(
+        _STREAM_ID,
+        object_id,  # object id
         DIFF_BRANCH,
-        message=commit_current + "-" + commit_previous
+        message=_COMMIT_CURRENT + "-" + _COMMIT_PREV
     )
-
-    return URL + stream_id + '/commits/' + commit_id 
-
-# uncomment for debug
-# compare_meshes(STREAM_ID, COMMIT_ID, PREV_COMMIT_ID)
-
+    diff_url = f"{HOST}/streams/{_STREAM_ID}/commits/{commit_id}"
+    print(f"Data sent to {diff_url}")
+    return diff_url

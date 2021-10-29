@@ -1,7 +1,8 @@
-from typing import Optional
+"""FastAPI Backend for the AEC Tech Masterclass"""
+
 from fastapi import FastAPI, Request
-from mesh_diff import compare_meshes
 from fastapi.middleware.cors import CORSMiddleware
+import mesh_diff as md
 
 app = FastAPI()
 
@@ -19,15 +20,9 @@ app.add_middleware(
 )
 
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
 @app.get("/diff/{stream_id}/{commit_current}/{commit_previous}")
 def get_diff(stream_id: str, commit_current: str, commit_previous: str, request: Request):
-    print(request)
-    print(request.headers.get("Authorisation"))
+    """Diffing endpoint"""
     token = request.headers.get("Authorisation").split(" ")[1]
-    print(token)
-    return compare_meshes(stream_id, commit_current, commit_previous, token)
+    md.authenticate(token)
+    return md.compare_meshes(stream_id, commit_current, commit_previous)

@@ -46,32 +46,38 @@ class SpeckleMeshDiff:
         # query for latest x commits in diff branch
         # read commit message & parse
         # return url if found
-        existing_diff_commit = self.check_existing_commits()
+        existing_diff_commit = None
         if existing_diff_commit is not None:
             url = f"{self.host}/streams/{self.stream_id}/commits/{existing_diff_commit}"
             print(f"Returning existing diff: {url}")
             return url
 
-        print("Did not find existing diff, processing commits now....")
-        diff_base = self.compare_meshes()
+        print("Did not find existing diff, fetching commits now....")
+        # get meshes from commits
+        previous_commit = self.receive_data(
+            self.client, self.stream_id, self.commit_prev)
+        previous_meshes = self.get_all_meshes(previous_commit)
+
+        current_commit = self.receive_data(
+            self.client, self.stream_id, self.commit_current)
+        current_meshes = self.get_all_meshes(current_commit)
+
+        print("Comparing meshes...")
+        diff_base = self.compare_meshes(current_meshes, previous_meshes)
+
         print("Diffing was successfull, sending to Speckle")
-        res = self.send_diff_data(diff_base)
+        diff_commit_id = self.send_data(
+            self.client,
+            self.stream_id,
+            self.diff_branch,
+            diff_base,
+            self.commit_current + "-" + self.commit_prev)
+
         print("Successfully sent data to Speckle")
-        return res
+        diff_url = f"{self.host}/streams/{self.stream_id}/commits/{diff_commit_id}"
+        return diff_url
 
-    def receive_data(self, stream_id: str, commit_id: str) -> Base:
-        """Get the data from a commit on the Speckle server"""
-        transport = ServerTransport(self.client, stream_id)
-
-        commit = self.client.commit.get(stream_id, commit_id)
-        res = operations.receive(commit.referencedObject, transport)
-
-        # if grasshopper, will be nested under data: res["data"]
-        # if rhino/autocad/revit, will be sent with layers or categories
-
-        return res
-
-    def check_existing_commits(self) -> Any:
+    def check_existing_commits(self) -> bool or None:
         """Checks if a specific diff commit already exists in the diff_branch"""
         branch_commits: Branch = self.client.branch.get(
             self.stream_id, self.diff_branch, 50)
@@ -82,18 +88,11 @@ class SpeckleMeshDiff:
 
         return None
 
-    def compare_meshes(self):
+    def compare_meshes(self, current_meshes: List[Mesh], previous_meshes: List[Mesh]) -> Base:
         """
         Compares the meshes from the first commit against the second, and sends the result to the `diff` branch.
         It returns the commit url of the diff.
         """
-
-        # get meshes from commits
-        previous_commit = self.receive_data(self.stream_id, self.commit_prev)
-        previous_meshes = self.get_all_meshes(previous_commit)
-
-        current_commit = self.receive_data(self.stream_id, self.commit_current)
-        current_meshes = self.get_all_meshes(current_commit)
 
         # pre process meshes in the current commit to check for same object ID (this means obj hasn't changed) - skip these
         # if object id has changed, check for application id - if these are the same, compare these objects directly
@@ -220,31 +219,44 @@ class SpeckleMeshDiff:
         base["ref"] = ref_meshes
         return base
 
-    def send_diff_data(self,
-                       diff_object: Base
-                       ):
-        """Sends the data resulting from the diff operation to the 'diff' branch"""
+    @staticmethod
+    def send_data(client: SpeckleClient, stream_id: str, branch: str, diff_object: Base, message: str) -> str:
+        """Sends a Base object to a specified branch"""
         # create a branch if necessary
-        branches = self.client.branch.list(self.stream_id)
-        has_res_branch = any(b.name == self.diff_branch for b in branches)
+        branches = client.branch.list(stream_id)
+        has_res_branch = any(b.name == branch for b in branches)
+
         if not has_res_branch:
-            self.client.branch.create(
-                self.stream_id, name=self.diff_branch, description="all your stream diff results"
+            client.branch.create(
+                stream_id, name=branch, description="This branch was created by the AEC Tech Masterclass App"
             )
 
         transport = ServerTransport(
-            client=self.client, stream_id=self.stream_id)
+            client=client, stream_id=stream_id)
 
         object_id = operations.send(base=diff_object, transports=[transport])
 
-        commit_id = self.client.commit.create(
-            self.stream_id,
+        commit_id = client.commit.create(
+            stream_id,
             object_id,  # object id
-            self.diff_branch,
-            message=self.commit_current + "-" + self.commit_prev
+            branch,
+            message
         )
-        diff_url = f"{self.host}/streams/{self.stream_id}/commits/{commit_id}"
-        return diff_url
+
+        return commit_id
+
+    @staticmethod
+    def receive_data(client: SpeckleClient, stream_id: str, commit_id: str) -> Base:
+        """Get the data from a commit on the Speckle server"""
+        transport = ServerTransport(client, stream_id)
+
+        commit = client.commit.get(stream_id, commit_id)
+        res = operations.receive(commit.referencedObject, transport)
+
+        # if grasshopper, will be nested under data: res["data"]
+        # if rhino/autocad/revit, will be sent with layers or categories
+
+        return res
 
     @staticmethod
     def get_all_meshes(child: Base) -> List[Mesh]:
@@ -274,7 +286,7 @@ class SpeckleMeshDiff:
         return meshes
 
     @staticmethod
-    def get_all_points(meshes: List[Mesh]):
+    def get_all_points(meshes: List[Mesh]) -> List[Point]:
         """Returns a flat list of vertices of all the meshes in a list"""
         points = []
         for mesh in meshes:
@@ -287,7 +299,7 @@ class SpeckleMeshDiff:
         return points
 
     @staticmethod
-    def find_point(current: Point, points: List[Point]):
+    def find_point(current: Point, points: List[Point]) -> bool:
         """Attempts to find a specific point in a list. Returns True if successful"""
         for point in points:
             if (point.x == current.x and point.y == current.y and point.z == current.z):

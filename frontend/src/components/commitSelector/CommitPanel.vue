@@ -84,14 +84,18 @@
       </v-col>
       <div>
         You are about to compare commit
-        <v-chip :close="commitA" @click:close="commitA = null">
+        <v-chip :close="commitA != null" @click:close="commitA = null">
           {{ commitA ? commitA.id : "Select commit" }}
         </v-chip>
         against
-        <v-chip :close="commitB" @click:close="commitB = null">
+        <v-chip :close="commitB != null" @click:close="commitB = null">
           {{ commitB ? commitB.id : "Select commit" }}
         </v-chip>
-        <v-btn color="success" :disabled="!commitA || !commitB">
+        <v-btn
+          color="success"
+          :disabled="!commitA || !commitB"
+          @click="requestDiff"
+        >
           Run this!
         </v-btn>
       </div>
@@ -100,6 +104,8 @@
 </template>
 
 <script>
+import { TOKEN } from "@/speckleUtils"
+
 export default {
   name: "CommitPanel",
   components: {},
@@ -108,6 +114,24 @@ export default {
     return {
       commitA: null,
       commitB: null
+    }
+  },
+  methods: {
+    async requestDiff() {
+      console.log("diff requested for", this.commitA.id, this.commitB.id)
+      var diffUrl = `http://localhost:8000/diff/${this.$route.params.id}/${this.commitA.id}/${this.commitB.id}`
+      console.log(diffUrl)
+      fetch(diffUrl, {
+        headers: {
+          method: "POST",
+          cors: "no-cors",
+          Authorisation: `Bearer ${localStorage.getItem(TOKEN)}`,
+          "Content-type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      })
+        .then(async res => console.log("fetch success", await res.json(), res))
+        .catch(err => console.warn("fetch failed", err))
     }
   }
 }

@@ -17,20 +17,18 @@ from specklepy.objects.other import RenderMaterial
 import os
 
 
-HOST = "speckle.xyz"
-#STREAM_ID = "8325294b8f"
-#COMMIT_ID = "d930269725"  # current commit
-#PREV_COMMIT_ID = "e9d8f67969"  # previous commit
+HOST = "latest.speckle.dev"
 DIFF_BRANCH = "diff"
-COLORS = [-6426, -13108, -19790, -26215, -32640, -39322, -45747, -52429, -59111, -65536]
+COLORS = [-6426, -13108, -19790, -26215, -
+          32640, -39322, -45747, -52429, -59111, -65536]
 WHITE = -1
 
-def get_authenticated_client() -> SpeckleClient:
-    client = SpeckleClient(host=HOST)
-    account = get_default_account()
-    client.authenticate(token=account.token)
 
+def get_authenticated_client(token: str) -> SpeckleClient:
+    client = SpeckleClient(host=HOST)
+    client.authenticate(token=token)
     return client
+
 
 def receive_data(
     client: SpeckleClient, stream_id: str, commit_id: str
@@ -45,7 +43,8 @@ def receive_data(
 
     return res
 
-def get_all_meshes(child:Base):
+
+def get_all_meshes(child: Base):
     meshes = []
 
     names = child.get_dynamic_member_names()
@@ -58,7 +57,7 @@ def get_all_meshes(child:Base):
                 if not hasattr(prop, "displayMesh"):
                     break
                 meshes.append((prop.displayMesh, prop.id))
-        elif isinstance(prop, list):  
+        elif isinstance(prop, list):
             for p in prop:
                 if isinstance(p, Mesh):
                     meshes.append((p, p.id))
@@ -67,6 +66,7 @@ def get_all_meshes(child:Base):
                         break
                     meshes.append((p.displayMesh, p.id))
     return meshes
+
 
 def get_all_points(meshes: List[Mesh]):
     points = []
@@ -79,16 +79,19 @@ def get_all_points(meshes: List[Mesh]):
             points.append(point)
     return points
 
+
 def find_point(current: Point, points: List[Point]):
     for point in points:
         if (point.x == current.x and point.y == current.y and point.z == current.z):
             return True
     return False
 
+
 def find_closest_point(current: Point, points: List[Point]):
     smallest_distance = None
     for point in points:
-        d = ((current.x - point.x)**2 + (current.y - point.y)**2 + (current.z - point.z)**2)**0.5
+        d = ((current.x - point.x)**2 + (current.y - point.y)
+             ** 2 + (current.z - point.z)**2)**0.5
         if smallest_distance is not None:
             if d > smallest_distance:
                 continue
@@ -96,12 +99,12 @@ def find_closest_point(current: Point, points: List[Point]):
     return smallest_distance
 
 
-def compare_meshes(stream_id: str, commit_current: str, commit_previous: str):
-    client = get_authenticated_client()
+def compare_meshes(stream_id: str, commit_current: str, commit_previous: str, token: str):
+    client = get_authenticated_client(token)
 
     # see if existing diff commit already exists
     # query for latest x commits in diff branch
-    # read commit message & parse 
+    # read commit message & parse
     # return url if found
 
     # get meshes from commits
@@ -152,7 +155,7 @@ def compare_meshes(stream_id: str, commit_current: str, commit_previous: str):
         diff_values = []
         for vertex in vertices:
             diff_values.append(find_closest_point(vertex, previous_points))
-        
+
         # determine color value for vertex by remapping domain
         bin_size = max(diff_values) / len(COLORS)
         for i in range(0, len(vertices), 1):
@@ -175,11 +178,10 @@ def compare_meshes(stream_id: str, commit_current: str, commit_previous: str):
         prev_meshes.append(mesh)
 
     # create a new commit with the diff meshes and changed edges
-    return send_diff_data(stream_id, commit_current, commit_previous, diff_meshes, match_meshes, prev_meshes)
+    return send_diff_data(stream_id, commit_current, commit_previous, diff_meshes, match_meshes, prev_meshes, client)
 
 
-def send_diff_data(stream_id: str, commit_current: str, commit_previous: str, meshes: List[Mesh], unchanged: List[Mesh], prev: List[Mesh]):
-    client = get_authenticated_client()
+def send_diff_data(stream_id: str, commit_current: str, commit_previous: str, meshes: List[Mesh], unchanged: List[Mesh], prev: List[Mesh], client):
 
     # create a branch if necessary
     branches = client.branch.list(stream_id)
@@ -201,12 +203,9 @@ def send_diff_data(stream_id: str, commit_current: str, commit_previous: str, me
 
     commit_id = client.commit.create(
         stream_id,
-        hash, # object id
+        hash,  # object id
         DIFF_BRANCH,
-        message= commit_current + "-" + commit_previous
+        message=commit_current + "-" + commit_previous
     )
 
-    return 'https://speckle.xyz/streams/' + stream_id + '/commits/' + commit_id 
-
-    
-
+    return f'https://{HOST}/streams/' + stream_id + '/commits/' + commit_id

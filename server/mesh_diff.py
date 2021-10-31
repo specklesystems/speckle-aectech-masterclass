@@ -1,6 +1,6 @@
 """SpeckleMeshDiff for AEC Tech Masterclass"""
 
-from typing import Any, List
+from typing import List
 import math
 from specklepy.api import operations
 from specklepy.api.client import SpeckleClient
@@ -42,16 +42,6 @@ class SpeckleMeshDiff:
         self.commit_current = commit_current
         self.commit_prev = commit_previous
 
-        # see if existing diff commit already exists
-        # query for latest x commits in diff branch
-        # read commit message & parse
-        # return url if found
-        existing_diff_commit = None
-        if existing_diff_commit is not None:
-            url = f"{self.host}/streams/{self.stream_id}/commits/{existing_diff_commit}"
-            print(f"Returning existing diff: {url}")
-            return url
-
         print("Did not find existing diff, fetching commits now....")
         # get meshes from commits
         previous_commit = self.receive_data(
@@ -74,8 +64,9 @@ class SpeckleMeshDiff:
             self.commit_current + "-" + self.commit_prev)
 
         print("Successfully sent data to Speckle")
-        diff_url = f"{self.host}/streams/{self.stream_id}/commits/{diff_commit_id}"
-        return diff_url
+        return self.client.commit.get(self.stream_id, diff_commit_id)
+        # diff_url = f"{self.host}/streams/{self.stream_id}/commits/{diff_commit_id}"
+        # return diff_url
 
     def check_existing_commits(self) -> bool or None:
         """Checks if a specific diff commit already exists in the diff_branch"""
@@ -84,7 +75,7 @@ class SpeckleMeshDiff:
 
         for commit in branch_commits.commits.items:
             if commit.message == f"{self.commit_current}-{self.commit_prev}":
-                return commit.id
+                return commit
 
         return None
 
@@ -283,6 +274,19 @@ class SpeckleMeshDiff:
                             (p.displayMesh, p.id, p.applicationId, p))
                     elif isinstance(p, Mesh):
                         meshes.append((p, p.id, p.applicationId))
+                    elif isinstance(p, list):
+                        for subp in p:
+                            if isinstance(subp, Brep):
+                                if not hasattr(subp, "displayMesh"):
+                                    break
+                                meshes.append(
+                                    (subp.displayMesh, subp.id, subp.applicationId, subp))
+                            elif isinstance(subp, Mesh):
+                                meshes.append(
+                                    (subp, subp.id, subp.applicationId))
+                            elif isinstance(subp, Base):
+                                meshes += SpeckleMeshDiff.get_all_meshes(subp)
+
         return meshes
 
     @staticmethod

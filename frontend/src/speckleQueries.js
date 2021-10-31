@@ -29,6 +29,7 @@ export const streamCommitsQuery = `
             sourceApplication
             referencedObject
             authorName
+            authorAvatar
             createdAt
           }
         }

@@ -1,137 +1,69 @@
 <template lang="html">
   <v-sheet class="pa-4" elevation="8">
-    <div>
-      Compare commit
-      <v-chip
-        :close="currentCommit != null"
-        @click:close="$emit('update:currentCommit', null)"
-        @click="show_commit_selector = 'A'"
-      >
-        {{ currentCommit ? currentCommit.id : "Select commit" }}
-      </v-chip>
-      against
-      <v-chip
-        :close="prevCommit != null"
-        @click:close="$emit('update:prevCommit', null)"
-        @click="show_commit_selector = 'B'"
-      >
-        {{ prevCommit ? prevCommit.id : "Select commit" }}
-      </v-chip>
-      <v-btn
-        color="success"
-        :disabled="!currentCommit || !prevCommit"
-        :loading="loading"
-        @click="requestDiff"
-      >
-        Request diff
-      </v-btn>
-      <v-btn :disabled="!diffCommit" color="primary" @click="toggleDiffView">
-        {{ showDiff ? "View commits" : "View diff" }}
-      </v-btn>
+    <div class="d-flex align-center">
+      <span style="white-space: nowrap;">
+        Compare commit
+        <v-chip
+          :close="currentCommit != null"
+          @click:close="$emit('update:currentCommit', null)"
+          @click="show_commit_selector = 'A'"
+        >
+          {{ currentCommit ? currentCommit.id : "Select commit" }}
+        </v-chip>
+        against
+        <v-chip
+          :close="prevCommit != null"
+          @click:close="$emit('update:prevCommit', null)"
+          @click="show_commit_selector = 'B'"
+        >
+          {{ prevCommit ? prevCommit.id : "Select commit" }}
+        </v-chip>
+      </span>
+      <div class="pl-2">
+        <v-btn
+          v-if="!diffCommit"
+          color="success"
+          :disabled="!currentCommit || !prevCommit"
+          :loading="loading"
+          @click="requestDiff"
+        >
+          Request diff
+        </v-btn>
+        <v-btn
+          v-else
+          :loading="loading"
+          color="primary"
+          @click="toggleDiffView"
+        >
+          {{ showDiff ? "View commits" : "View diff" }}
+        </v-btn>
+      </div>
     </div>
-
-    <v-slide-group
+    <commit-slider
       v-if="show_commit_selector == 'A'"
-      :value="currentCommit"
-      @change="$emit('update:currentCommit', $event)"
-      center-active
-      show-arrows
-    >
-      <v-slide-item
-        v-for="n in commits"
-        :key="n.id"
-        v-slot="{ active, toggle }"
-        :value="n"
-        :disabled="prevCommit && n.id === prevCommit['id']"
-      >
-        <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
-            <v-card
-              v-bind="attrs"
-              v-on="on"
-              :color="active ? 'success' : 'primary lighten-1'"
-              class="ma-1"
-              height="100"
-              width="40"
-              @click="toggle"
-              v-on:click="show_commit_selector = null"
-              :disabled="prevCommit && n.id === prevCommit['id']"
-            >
-              <div class="d-flex fill-height justify-center align-center">
-                <v-scale-transition mode="out-in">
-                  <span v-if="!active" style="writing-mode: vertical-rl;">
-                    {{ n.id }}
-                  </span>
-                  <v-icon
-                    v-else
-                    color="white"
-                    size="20"
-                    v-text="'mdi-close-circle-outline'"
-                  ></v-icon>
-                </v-scale-transition>
-              </div>
-            </v-card>
-          </template>
-          <span>{{ n.message }}</span>
-        </v-tooltip>
-      </v-slide-item>
-    </v-slide-group>
-
-    <v-slide-group
-      v-else-if="show_commit_selector == 'B'"
-      :value="prevCommit"
-      @change="$emit('update:prevCommit', $event)"
-      center-active
-      show-arrows
-    >
-      <v-slide-item
-        v-for="n in commits"
-        :key="n.id"
-        v-slot="{ active, toggle }"
-        :value="n"
-        :disabled="currentCommit && n.id === currentCommit['id']"
-      >
-        <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
-            <v-card
-              v-bind="attrs"
-              v-on="on"
-              :color="active ? 'success' : 'primary lighten-1'"
-              :disabled="currentCommit && n.id === currentCommit['id']"
-              class="ma-1"
-              height="100"
-              width="40"
-              @click="toggle"
-              v-on:click="show_commit_selector = null"
-            >
-              <div class="d-flex fill-height justify-center align-center">
-                <v-scale-transition mode="out-in">
-                  <span v-if="!active" style="writing-mode: vertical-rl;">
-                    {{ n.id }}
-                  </span>
-                  <v-icon
-                    v-else
-                    color="white"
-                    size="20"
-                    v-text="'mdi-close-circle-outline'"
-                  ></v-icon>
-                </v-scale-transition>
-              </div>
-            </v-card>
-          </template>
-          <span>{{ n.message }}</span>
-        </v-tooltip>
-      </v-slide-item>
-    </v-slide-group>
+      :commits="commits"
+      :selected="currentCommit"
+      :disabled-id="prevCommit ? prevCommit.id : null"
+      @update:selected="$emit('update:currentCommit', $event)"
+      @click:commit="show_commit_selector = null"
+    />
+    <commit-slider
+      v-if="show_commit_selector == 'B'"
+      :commits="commits"
+      :selected="prevCommit"
+      :disabled-id="currentCommit ? currentCommit.id : null"
+      @update:selected="$emit('update:prevCommit', $event)"
+      @click:commit="show_commit_selector = null"
+    />
   </v-sheet>
 </template>
 
 <script lang="js">
 import { TOKEN } from "@/speckleUtils"
-
+import CommitSlider from "@/components/commitSelector/CommitSlider.vue"
 export default {
   name: "CommitPanel",
-  components: {},
+  components: { CommitSlider },
   props: ["commits", "diffCommit", "showDiff", "currentCommit", "prevCommit"],
   data() {
     return {
@@ -144,7 +76,7 @@ export default {
       this.$emit("update:showDiff", !this.showDiff)
     },
     async doesDiffExist(){
-      console.log("diff check requested for", this.currentCommit.id, this.prevCommit.id)
+      if(!this.currentCommit || !this.prevCommit) return { commit: null }
       var diffUrl = `http://localhost:8000/diff_check/${this.$route.params.id}/${this.currentCommit.id}/${this.prevCommit.id}`
       var res = await fetch(diffUrl, {
         headers: {
@@ -175,32 +107,26 @@ export default {
       }
       this.loading = false
     },
+    async handleCommitChange(event, value){
+      this.loading = true
+      this.$emit(event, value)
+      this.$emit("update:diff-commit", null)
+      if(value){
+        var diffRes = await this.doesDiffExist()
+        this.$emit("update:diff-commit", diffRes.commit)
+      }
+      this.loading = false
+    }
   },
   watch: {
     currentCommit: {
       handler: async function(newVal, oldVal) {
-        this.$emit("current-commit", newVal)
-        this.loading = true
-        if(newVal && this.prevCommit){
-          var diffRes = await this.doesDiffExist()
-          console.log(diffRes)
-          if(diffRes.exists)
-            this.$emit("update:diffCommit", diffRes.commit)
-        }
-        this.loading = false
+        this.handleCommitChange("current-commit", newVal)
       }
     },
     prevCommit: {
       handler: async function(newVal, oldVal){
-        this.$emit("prev-commit", newVal)
-        this.loading = true
-        if(newVal && this.currentCommit){
-          var diffRes = await this.doesDiffExist()
-          console.log(diffRes)
-          if(diffRes.exists)
-            this.$emit("update:diffCommit", diffRes.commit)
-        }
-        this.loading = false
+        this.handleCommitChange("prev-commit", newVal)
       }
     }
   }

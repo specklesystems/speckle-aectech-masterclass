@@ -13,14 +13,12 @@
     <v-row class="fill-height" no-gutters v-show="!showDiff">
       <v-col cols="6">
         <Renderer
-          :camera.sync="camera"
           :object-url="objectUrl(currentCommit)"
           show-selection-helper
         ></Renderer>
       </v-col>
       <v-col cols="6">
         <Renderer
-          :camera.sync="camera"
           :object-url="objectUrl(prevCommit)"
           show-selection-helper
         ></Renderer>
@@ -29,7 +27,6 @@
     <v-row class="fill-height" no-gutters>
       <v-col fill-height :cols="12">
         <Renderer
-          :camera.sync="camera"
           :object-url="objectUrl(diffCommit)"
           show-selection-helper
         ></Renderer>
@@ -39,7 +36,7 @@
 </template>
 
 <script>
-import { getStreamCommits, getStreamObject } from "@/speckleUtils"
+import { getStreamCommits } from "@/speckleUtils"
 import Renderer from "../components/viewer/Renderer.vue"
 import CommitPanel from "@/components/commitSelector/CommitPanel.vue"
 
@@ -54,8 +51,7 @@ export default {
       diffCommit: null,
       serverUrl: process.env.VUE_APP_SERVER_URL,
       showDiff: false,
-      loading: true,
-      camera: null
+      loading: true
     }
   },
   async mounted() {

@@ -1,20 +1,36 @@
 <template lang="html">
   <v-container fill-height fluid class="pa-0">
     <div class="float-center-top">
-      <CommitPanel v-if="stream" :commits="stream.commits.items"></CommitPanel>
+      <CommitPanel
+        v-if="stream"
+        :showDiff.sync="showDiff"
+        :diffCommit.sync="diffCommit"
+        :currentCommit.sync="currentCommit"
+        :prevCommit.sync="prevCommit"
+        :commits="stream.branch.commits.items"
+      />
     </div>
-    <v-row class="fill-height" no-gutters>
-      <v-col fill-height cols="6">
+    <v-row class="fill-height" no-gutters v-show="!showDiff">
+      <v-col cols="6">
         <Renderer
-          v-if="stream"
-          :object-urls="[objectUrl(0)]"
+          :camera.sync="camera"
+          :object-url="objectUrl(currentCommit)"
           show-selection-helper
         ></Renderer>
       </v-col>
-      <v-col fill-height cols="6">
+      <v-col cols="6">
         <Renderer
-          v-if="stream"
-          :object-urls="[objectUrl(1)]"
+          :camera.sync="camera"
+          :object-url="objectUrl(prevCommit)"
+          show-selection-helper
+        ></Renderer>
+      </v-col>
+    </v-row>
+    <v-row class="fill-height" no-gutters>
+      <v-col fill-height :cols="12">
+        <Renderer
+          :camera.sync="camera"
+          :object-url="objectUrl(diffCommit)"
           show-selection-helper
         ></Renderer>
       </v-col>
@@ -33,11 +49,13 @@ export default {
   data() {
     return {
       stream: null,
-      selectedCommit: null,
-      refObj: null,
+      currentCommit: null,
+      prevCommit: null,
+      diffCommit: null,
       serverUrl: process.env.VUE_APP_SERVER_URL,
+      showDiff: false,
       loading: true,
-      progress: 0
+      camera: null
     }
   },
   async mounted() {
@@ -46,6 +64,7 @@ export default {
     }
   },
   computed: {
+    /** @return {string} */
     streamId() {
       return this.$route.params.id
     }
@@ -53,27 +72,17 @@ export default {
   methods: {
     async getStream() {
       var res = await getStreamCommits(this.streamId, 10, null)
-      this.selectedCommit = res.data.stream.commits.items[0]
       this.stream = res.data.stream
     },
-    objectUrl(i) {
-      return [
-        `${this.serverUrl}/streams/${this.stream.id}/objects/${this.stream.commits.items[i].referencedObject}`
-      ]
+    objectUrl(commit) {
+      if (!commit) return null
+      return `${this.serverUrl}/streams/${this.stream.id}/objects/${commit.referencedObject}`
     }
   },
   watch: {
     streamId: {
       handler: async function(val, oldVal) {
         if (val) this.getStream()
-      }
-    },
-    selectedCommit: {
-      handler: async function() {
-        this.refObj = await getStreamObject(
-          this.stream.id,
-          this.selectedCommit.referencedObject
-        )
       }
     }
   }

@@ -1,5 +1,3 @@
-
-
 export const userInfoQuery = `
   query {
     user {
@@ -20,17 +18,19 @@ export const streamCommitsQuery = `
       name
       updatedAt
       id
-      commits(limit: $limit, cursor: $cursor) {
-        totalCount
-        cursor
-        items{
-          id
-          message
-          branchName
-          sourceApplication
-          referencedObject
-          authorName
-          createdAt
+      branch(name: "main"){
+        commits(limit: $limit, cursor: $cursor) {
+          totalCount
+          cursor
+          items{
+            id
+            message
+            branchName
+            sourceApplication
+            referencedObject
+            authorName
+            createdAt
+          }
         }
       }
     }

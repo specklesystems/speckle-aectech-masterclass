@@ -2,7 +2,6 @@
   <v-slide-group
     :value="selected"
     @change="$emit('update:selected', $event)"
-    center-active
     show-arrows
   >
     <v-slide-item
@@ -18,9 +17,9 @@
             v-on="on"
             :color="active ? 'primary' : 'grey lighten-1'"
             :disabled="n.id === disabledId"
+            :elevation="0"
             class="ma-1"
             @click="toggle"
-            :elevation="0"
             v-on:click="$emit('click:commit', n)"
           >
             <div class="d-flex fill-height justify-center align-center">
@@ -39,12 +38,13 @@
                     <timeago :datetime="n.createdAt"></timeago>
                   </span>
                 </div>
-                <v-icon
-                  v-else
-                  color="white"
-                  size="20"
-                  v-text="'mdi-close-circle-outline'"
-                ></v-icon>
+                <div v-else class="ma-3">
+                  <v-icon
+                    color="white"
+                    size="24"
+                    v-text="'mdi-close-circle-outline'"
+                  ></v-icon>
+                </div>
               </v-scale-transition>
             </div>
           </v-card>

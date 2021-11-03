@@ -65,8 +65,6 @@ class SpeckleMeshDiff:
 
         print("Successfully sent data to Speckle")
         return self.client.commit.get(self.stream_id, diff_commit_id)
-        # diff_url = f"{self.host}/streams/{self.stream_id}/commits/{diff_commit_id}"
-        # return diff_url
 
     def check_existing_commits(self) -> bool or None:
         """Checks if a specific diff commit already exists in the diff_branch"""
@@ -193,10 +191,7 @@ class SpeckleMeshDiff:
             ref_meshes.append(mesh)
         for diff_mesh_ref_index in diff_mesh_ref_indices:
             mesh = previous_meshes[diff_mesh_ref_index]
-            if len(mesh) > 3:
-                diff_mesh_refs.append(mesh[3])
-            else:
-                diff_mesh_refs.append(mesh[0])
+            diff_mesh_refs.append(mesh[0])
 
         # Construct diff base object to return
         base = Base()
@@ -301,14 +296,6 @@ class SpeckleMeshDiff:
                 point.z = mesh.vertices[i]
                 points.append(point)
         return points
-
-    @staticmethod
-    def find_point(current: Point, points: List[Point]) -> bool:
-        """Attempts to find a specific point in a list. Returns True if successful"""
-        for point in points:
-            if (point.x == current.x and point.y == current.y and point.z == current.z):
-                return True
-        return False
 
     @staticmethod
     def find_closest_point(current: Point, points: List[Point]):

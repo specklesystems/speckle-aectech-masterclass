@@ -269,18 +269,8 @@ class SpeckleMeshDiff:
                             (p.displayMesh, p.id, p.applicationId, p))
                     elif isinstance(p, Mesh):
                         meshes.append((p, p.id, p.applicationId))
-                    elif isinstance(p, list):
-                        for subp in p:
-                            if isinstance(subp, Brep):
-                                if not hasattr(subp, "displayMesh"):
-                                    break
-                                meshes.append(
-                                    (subp.displayMesh, subp.id, subp.applicationId, subp))
-                            elif isinstance(subp, Mesh):
-                                meshes.append(
-                                    (subp, subp.id, subp.applicationId))
-                            elif isinstance(subp, Base):
-                                meshes += SpeckleMeshDiff.get_all_meshes(subp)
+                    elif hasattr(p, "displayMesh") or hasattr(p, "@displayMesh"):
+                        meshes.append((p.displayMesh, p.id, p.applicationId))
 
         return meshes
 

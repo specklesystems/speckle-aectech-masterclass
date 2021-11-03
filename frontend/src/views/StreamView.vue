@@ -1,5 +1,5 @@
 <template lang="html">
-  <v-container fill-height fluid class="pa-0">
+  <v-container fill-height fluid class="pa-0 grey lighten-3">
     <div class="float-center-top">
       <CommitPanel
         v-if="stream"

@@ -50,17 +50,6 @@ export const streamSearchQuery = `
     }
   }`
 
-export const streamObjectQuery = `query($streamId: String!, $objectId: String!) {
-    stream(id: $streamId){
-        object(id: $objectId){
-            totalChildrenCount
-            id
-            speckleType
-            data
-        }
-    }
-}`
-
 export const latestStreamsQuery = `query {
     streams(limit: 10){
         cursor

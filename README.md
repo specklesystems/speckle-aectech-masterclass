@@ -55,7 +55,7 @@ The app was built using `Vue.js`, and communicates with Speckle through our `Gra
 
 The `server/` folder contains all code related to the app's backend.
 
-We're using a [FastAPI](https://link) server, written in Python, as well as our Python SDK to communicate with the [public Speckle server](https://speckle.xyz). The server contains two basic routes:
+We're using a [FastAPI](https://link) API framework with a Uvicorn server implementation, written in Python, as well as our Python SDK to communicate with the [public Speckle server](https://speckle.xyz). The server contains two basic routes:
 
 - **`diff-check/STREAM_ID/CURRENT_COMMIT_ID/PREV_COMMIT_ID`**
   
@@ -94,6 +94,12 @@ Some basic familiarity with python, POST requests, and API routing is recommende
   ```
   *If you're experiencing pip install issues, check that you are running these commands as an administrator!*
   
+ To deploy the server, open a command window in VSCode and navigate to your server folder. Run:
+ 
+ ```shell
+ uvicorn main:app --reload
+ ```
+  
 ## Frontend walkthrough requirements
 
 Some basic familiarity with JS and the Vue framework is recommended.
@@ -101,6 +107,13 @@ Some basic familiarity with JS and the Vue framework is recommended.
 - Install `node` [Download it here](https://nodejs.org/en/download/)
 - Install `vue CLI` - [Instructions here](https://cli.vuejs.org/guide/installation.html)
 - Install `vue dev tools` for Chrome [here](https://chrome.google.com/webstore/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
+
+ To deploy the server, open a command window in VSCode and navigate to your frontend folder. Run:
+ 
+ ```shell
+ npm install
+ npm run serve
+ ```
 
 ## App testing requirements
 

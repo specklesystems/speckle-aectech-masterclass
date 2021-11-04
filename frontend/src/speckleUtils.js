@@ -88,8 +88,6 @@ export const searchStreams = (e) => speckleFetch(streamSearchQuery, {searchText:
 // Get commits related to a specific stream, allows for pagination by passing a cursor
 export const getStreamCommits = (streamId, itemsPerPage, cursor) => speckleFetch(streamCommitsQuery, {id: streamId, cursor, limit: itemsPerPage})
 
-export const getStreamObject = (streamId, objectId) => speckleFetch(streamObjectQuery, {streamId, objectId}).then(res => res.data?.stream?.object?.data)
-
 export const getObject = (streamId, objectId) => speckleFetch(streamObjectQuery, {streamId, objectId})
 
 export const getStreams = () => speckleFetch(latestStreamsQuery).then(res => res.data?.streams)

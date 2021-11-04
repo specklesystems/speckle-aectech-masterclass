@@ -1,5 +1,3 @@
-
-
 export const userInfoQuery = `
   query {
     user {
@@ -20,17 +18,20 @@ export const streamCommitsQuery = `
       name
       updatedAt
       id
-      commits(limit: $limit, cursor: $cursor) {
-        totalCount
-        cursor
-        items{
-          id
-          message
-          branchName
-          sourceApplication
-          referencedObject
-          authorName
-          createdAt
+      branch(name: "main"){
+        commits(limit: $limit, cursor: $cursor) {
+          totalCount
+          cursor
+          items{
+            id
+            message
+            branchName
+            sourceApplication
+            referencedObject
+            authorName
+            authorAvatar
+            createdAt
+          }
         }
       }
     }
@@ -48,17 +49,6 @@ export const streamSearchQuery = `
       }
     }
   }`
-
-export const streamObjectQuery = `query($streamId: String!, $objectId: String!) {
-    stream(id: $streamId){
-        object(id: $objectId){
-            totalChildrenCount
-            id
-            speckleType
-            data
-        }
-    }
-}`
 
 export const latestStreamsQuery = `query {
     streams(limit: 10){

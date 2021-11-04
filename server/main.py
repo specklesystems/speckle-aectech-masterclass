@@ -1,7 +1,8 @@
-from typing import Optional
-from fastapi import FastAPI, Request
-from mesh_diff import compare_meshes
+"""FastAPI Backend for the AEC Tech Masterclass"""
+
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from mesh_diff import SpeckleMeshDiff
 
 app = FastAPI()
 
@@ -19,15 +20,46 @@ app.add_middleware(
 )
 
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
 @app.get("/diff/{stream_id}/{commit_current}/{commit_previous}")
 def get_diff(stream_id: str, commit_current: str, commit_previous: str, request: Request):
-    print(request)
-    print(request.headers.get("Authorisation"))
-    token = request.headers.get("Authorisation").split(" ")[1]
-    print(token)
-    return compare_meshes(stream_id, commit_current, commit_previous, token)
+    """Diffing endpoint"""
+    auth_header = request.headers.get("Authorisation")
+
+    if auth_header is None:
+        raise HTTPException(405, "No token provided")
+
+    token = auth_header.split(" ")[1]
+
+    try:
+        mesh_differ = SpeckleMeshDiff(token, "https://latest.speckle.dev")
+        diff_commit = mesh_differ.process_diff(
+            stream_id, commit_current, commit_previous)
+    except Exception as e:
+        raise HTTPException(500, str(e))
+    return {"commit": diff_commit}
+
+
+@app.get("/diff_check/{stream_id}/{commit_current}/{commit_previous}")
+def get_diff_check(stream_id: str, commit_current: str, commit_previous: str, request: Request):
+    """Diffing endpoint"""
+    auth_header = request.headers.get("Authorisation")
+
+    if auth_header is None:
+        raise HTTPException(405, "No token provided")
+
+    token = auth_header.split(" ")[1]
+
+    try:
+        mesh_differ = SpeckleMeshDiff(token, "https://latest.speckle.dev")
+        mesh_differ.stream_id = stream_id
+        mesh_differ.commit_current = commit_current
+        mesh_differ.commit_prev = commit_previous
+        existing_diff_commit = mesh_differ.check_existing_commits()
+        if existing_diff_commit is not None:
+
+            return {"exists": True, "commit": existing_diff_commit}
+        else:
+            return {"exists": False, "commit": None}
+
+    except Exception as e:
+        raise HTTPException(500, str(e))

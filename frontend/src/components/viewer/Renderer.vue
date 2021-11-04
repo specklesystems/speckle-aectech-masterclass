@@ -221,8 +221,8 @@ export default {
       type: Boolean,
       default: false
     },
-    objectUrls: {
-      type: Array,
+    objectUrl: {
+      type: String,
       default: null
     },
     unloadTrigger: {
@@ -277,7 +277,9 @@ export default {
         this.namedViews.push(...views)
       }
     },
-    objectUrls() {
+    objectUrl(newVal, oldVal) {
+      if (newVal == oldVal) return
+      console.log("obj url changed", newVal, oldVal)
       this.unloadData()
       this.load()
     }
@@ -289,7 +291,6 @@ export default {
     if (!this.viewer) {
       this.viewer = new Viewer({ container: this.$refs.renderer })
     }
-
     this.viewer.onWindowResize()
     this.setupEvents()
   },
@@ -338,12 +339,11 @@ export default {
       })
     },
     load() {
-      if (!this.objectUrls || this.objectUrls.length === 0) return
-      this.viewer.onWindowResize()
-      this.objectUrls?.forEach(url => {
-        this.viewer.loadObject(url, localStorage.getItem(TOKEN))
-        this.viewerLastLoadedUrl = url
-      })
+      if (!this.objectUrl) return
+
+      this.viewer.loadObject(this.objectUrl, localStorage.getItem(TOKEN))
+      this.viewerLastLoadedUrl = this.objectUrl
+
       this.setupEvents()
       this.hasLoadedModel = true
     },

@@ -14,15 +14,15 @@ const routes = [
     component: Home,
     meta: {
       requiresAuth: true,
-      title: "Speckle Revit Dashboard",
+      title: "Speckle AEC Tech Masterclass",
       metaTags: [
         {
           name: "description",
-          content: "The speckle Revit Dashboard homepage"
+          content: "The Speckle AEC Tech Masterclass homepage"
         },
         {
           property: "og:description",
-          content: "The speckle Revit Dashboard homepage"
+          content: "The Speckle AEC Tech Masterclass homepage"
         }
       ]
     }
@@ -33,7 +33,7 @@ const routes = [
     component: WelcomeView,
     meta: {
       requiresNoAuth: true,
-      title: "Login | Speckle Revit Dashboard"
+      title: "Login | Speckle AEC Tech Masterclass"
     }
   },
   {

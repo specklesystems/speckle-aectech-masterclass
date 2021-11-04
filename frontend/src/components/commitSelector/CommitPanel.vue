@@ -1,137 +1,133 @@
 <template lang="html">
   <v-sheet class="pa-4" elevation="8">
-    <p>Compare commit</p>
-    <v-row dense no-gutters>
-      <v-col cols="6">
-        <v-slide-group v-model="commitA" center-active show-arrows>
-          <v-slide-item
-            v-for="n in commits"
-            :key="n.id"
-            v-slot="{ active, toggle }"
-            :value="n"
-          >
-            <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
-                <v-card
-                  v-bind="attrs"
-                  v-on="on"
-                  :color="active ? 'success' : 'primary lighten-1'"
-                  class="ma-1"
-                  height="100"
-                  width="40"
-                  @click="toggle"
-                >
-                  <div class="d-flex fill-height justify-center align-center">
-                    <v-scale-transition mode="out-in">
-                      <span v-if="!active" style="writing-mode: vertical-rl;">
-                        {{ n.id }}
-                      </span>
-                      <v-icon
-                        v-else
-                        color="white"
-                        size="20"
-                        v-text="'mdi-close-circle-outline'"
-                      ></v-icon>
-                    </v-scale-transition>
-                  </div>
-                </v-card>
-              </template>
-              <span>{{ n.message }}</span>
-            </v-tooltip>
-          </v-slide-item>
-        </v-slide-group>
-      </v-col>
-      <v-col cols="6">
-        <v-slide-group v-model="commitB" center-active show-arrows>
-          <v-slide-item
-            v-for="n in commits"
-            :key="n.id"
-            v-slot="{ active, toggle }"
-            :value="n"
-            :disabled="commitA && n.id === commitA['id']"
-          >
-            <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
-                <v-card
-                  v-bind="attrs"
-                  v-on="on"
-                  :color="active ? 'success' : 'primary lighten-1'"
-                  class="ma-1"
-                  height="100"
-                  width="40"
-                  @click="toggle"
-                  :disabled="commitA && n.id === commitA['id']"
-                >
-                  <div class="d-flex fill-height justify-center align-center">
-                    <v-scale-transition mode="out-in">
-                      <span v-if="!active" style="writing-mode: vertical-rl;">
-                        {{ n.id }}
-                      </span>
-                      <v-icon
-                        v-else
-                        color="white"
-                        size="20"
-                        v-text="'mdi-close-circle-outline'"
-                      ></v-icon>
-                    </v-scale-transition>
-                  </div>
-                </v-card>
-              </template>
-              <span>{{ n.message }}</span>
-            </v-tooltip>
-          </v-slide-item>
-        </v-slide-group>
-      </v-col>
-      <div>
-        You are about to compare commit
-        <v-chip :close="commitA != null" @click:close="commitA = null">
-          {{ commitA ? commitA.id : "Select commit" }}
+    <div class="d-flex align-center">
+      <span style="white-space: nowrap;">
+        Compare commit
+        <v-chip
+          :close="currentCommit != null"
+          @click:close="$emit('update:currentCommit', null)"
+          @click="show_commit_selector = 'A'"
+        >
+          {{ currentCommit ? currentCommit.id : "Select commit" }}
         </v-chip>
         against
-        <v-chip :close="commitB != null" @click:close="commitB = null">
-          {{ commitB ? commitB.id : "Select commit" }}
+        <v-chip
+          :close="prevCommit != null"
+          @click:close="$emit('update:prevCommit', null)"
+          @click="show_commit_selector = 'B'"
+        >
+          {{ prevCommit ? prevCommit.id : "Select commit" }}
         </v-chip>
+      </span>
+      <div class="pl-2">
         <v-btn
+          v-if="!diffCommit"
           color="success"
-          :disabled="!commitA || !commitB"
+          :disabled="!currentCommit || !prevCommit"
+          :loading="loading"
           @click="requestDiff"
         >
-          Run this!
+          Request diff
+        </v-btn>
+        <v-btn
+          v-else
+          :loading="loading"
+          color="primary"
+          @click="toggleDiffView"
+        >
+          {{ showDiff ? "View commits" : "View diff" }}
         </v-btn>
       </div>
-    </v-row>
+    </div>
+    <commit-slider
+      v-if="show_commit_selector == 'A'"
+      :commits="commits"
+      :selected="currentCommit"
+      :disabled-id="prevCommit ? prevCommit.id : null"
+      @update:selected="$emit('update:currentCommit', $event)"
+      @click:commit="show_commit_selector = null"
+    />
+    <commit-slider
+      v-if="show_commit_selector == 'B'"
+      :commits="commits"
+      :selected="prevCommit"
+      :disabled-id="currentCommit ? currentCommit.id : null"
+      @update:selected="$emit('update:prevCommit', $event)"
+      @click:commit="show_commit_selector = null"
+    />
   </v-sheet>
 </template>
 
-<script>
+<script lang="js">
 import { TOKEN } from "@/speckleUtils"
-
+import CommitSlider from "@/components/commitSelector/CommitSlider.vue"
 export default {
   name: "CommitPanel",
-  components: {},
-  props: ["commits"],
+  components: { CommitSlider },
+  props: ["commits", "diffCommit", "showDiff", "currentCommit", "prevCommit"],
   data() {
     return {
-      commitA: null,
-      commitB: null
+      show_commit_selector: null,
+      loading: false,
     }
   },
   methods: {
-    async requestDiff() {
-      console.log("diff requested for", this.commitA.id, this.commitB.id)
-      var diffUrl = `http://localhost:8000/diff/${this.$route.params.id}/${this.commitA.id}/${this.commitB.id}`
-      console.log(diffUrl)
-      fetch(diffUrl, {
+    toggleDiffView(){
+      this.$emit("update:showDiff", !this.showDiff)
+    },
+    async doesDiffExist(){
+      if(!this.currentCommit || !this.prevCommit) return { commit: null }
+      var diffUrl = `http://localhost:8000/diff_check/${this.$route.params.id}/${this.currentCommit.id}/${this.prevCommit.id}`
+      var res = await fetch(diffUrl, {
         headers: {
-          method: "POST",
-          cors: "no-cors",
+          method: "GET",
           Authorisation: `Bearer ${localStorage.getItem(TOKEN)}`,
           "Content-type": "application/json",
           "Access-Control-Allow-Origin": "*"
         }
       })
-        .then(async res => console.log("fetch success", await res.json(), res))
-        .catch(err => console.warn("fetch failed", err))
+      return await res.json()
+    },
+    async requestDiff() {
+      this.loading = true
+      console.log("diff requested for", this.currentCommit.id, this.prevCommit.id)
+      var diffUrl = `http://localhost:8000/diff/${this.$route.params.id}/${this.currentCommit.id}/${this.prevCommit.id}`
+      var res = await fetch(diffUrl, {
+        headers: {
+          method: "GET",
+          Authorisation: `Bearer ${localStorage.getItem(TOKEN)}`,
+          "Content-type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      })
+      if(res.status == 200){
+        var body = await res.json()
+        console.log("diff body", res, body)
+        this.$emit("update:diffCommit", body.commit)
+      }
+      this.loading = false
+    },
+    async handleCommitChange(event, value){
+      this.loading = true
+      this.$emit(event, value)
+      this.$emit("update:diff-commit", null)
+      if(value){
+        var diffRes = await this.doesDiffExist()
+        this.$emit("update:diff-commit", diffRes.commit)
+      }
+      this.loading = false
+    }
+  },
+  watch: {
+    currentCommit: {
+      handler: async function(newVal, oldVal) {
+        this.handleCommitChange("current-commit", newVal)
+      }
+    },
+    prevCommit: {
+      handler: async function(newVal, oldVal){
+        this.handleCommitChange("prev-commit", newVal)
+      }
     }
   }
 }

@@ -69,4 +69,4 @@ def get_diff_check(stream_id: str, commit_current: str, commit_previous: str, re
 
     except Exception as e:
         print(e.with_traceback())
-        raise HTTPException(500, e.with_traceback()))
+        raise HTTPException(500, e.with_traceback())

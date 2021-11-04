@@ -10,10 +10,10 @@ app = FastAPI()
 
 server_url = os.environ.get("SPECKLE_SERVER", "https://speckle.xyz")
 diff_branch = os.environ.get("DIFF_BRANCH", "diff")
-
+frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:8080")
 origins = [
     "http://localhost",
-    "http://localhost:8080",
+    frontend_url,
 ]
 
 app.add_middleware(

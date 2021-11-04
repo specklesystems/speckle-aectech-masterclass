@@ -77,7 +77,8 @@ export default {
     },
     async doesDiffExist(){
       if(!this.currentCommit || !this.prevCommit) return { commit: null }
-      var diffUrl = `http://localhost:8000/diff_check/${this.$route.params.id}/${this.currentCommit.id}/${this.prevCommit.id}`
+      var backendUrl = process.env.VUE_APP_BACKEND_URL
+      var diffUrl = `${backendUrl}/diff_check/${this.$route.params.id}/${this.currentCommit.id}/${this.prevCommit.id}`
       var res = await fetch(diffUrl, {
         headers: {
           method: "GET",
@@ -90,8 +91,9 @@ export default {
     },
     async requestDiff() {
       this.loading = true
+      var backendUrl = process.env.VUE_APP_BACKEND_URL
       console.log("diff requested for", this.currentCommit.id, this.prevCommit.id)
-      var diffUrl = `http://localhost:8000/diff/${this.$route.params.id}/${this.currentCommit.id}/${this.prevCommit.id}`
+      var diffUrl = `${backendUrl}/diff/${this.$route.params.id}/${this.currentCommit.id}/${this.prevCommit.id}`
       var res = await fetch(diffUrl, {
         headers: {
           method: "GET",

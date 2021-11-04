@@ -14,12 +14,13 @@ frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:8080")
 origins = [
     "http://localhost",
     "http://localhost:8080",
-    "https://speckle-aectech-masterclass.netlify.app"
+    "https://speckle-aectech-masterclass.netlify.app",
+    "http://speckle-aectech-masterclass.netlify.app"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

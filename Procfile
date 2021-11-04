@@ -1,1 +1,1 @@
-web: uvicorn main:app --app-dir=server --host=0.0.0.0 --port=${PORT:-5000}
+web: uvicorn server.main:app --app-dir=server --host=0.0.0.0 --port=${PORT:-5000}

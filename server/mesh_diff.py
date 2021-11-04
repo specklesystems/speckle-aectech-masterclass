@@ -10,8 +10,7 @@ from specklepy.objects.geometry import Brep, Point, Mesh
 from specklepy.objects import Base
 from specklepy.objects.other import RenderMaterial
 
-COLORS = [-6426, -13108, -19790, -26215, -
-          32640, -39322, -45747, -52429, -59111, -65536]
+COLORS = [-6426, -13108, -19790, -26215, -32640, -39322, -45747, -52429, -59111, -65536]
 WHITE = -1
 
 

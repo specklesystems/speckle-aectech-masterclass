@@ -13,7 +13,8 @@ diff_branch = os.environ.get("DIFF_BRANCH", "diff")
 frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:8080")
 origins = [
     "http://localhost",
-    frontend_url,
+    "http://localhost:8080",
+    "https://speckle-aectech-masterclass.netlify.app"
 ]
 
 app.add_middleware(

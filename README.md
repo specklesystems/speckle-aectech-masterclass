@@ -41,7 +41,7 @@ Give Speckle a try in no time by:
 
 # AECTech Masterclass Repo
 
-For the AECTech Masterclass, we're building a web application that **compares two 3D models and visualizes changes in geometry**. This repo is divided into a **frontend** developed with Vue.js and a **server** built with python.
+For the AECTech Masterclass, we're building a web application that **compares two 3D models and visualizes changes in geometry**. This repo is divided into a **web app** developed with Vue.js and a **server** built with python.
 
 ![diagram](https://user-images.githubusercontent.com/16748799/140319019-4ff437c6-21b6-4d13-a50f-c6b0f8eaa982.png)
 

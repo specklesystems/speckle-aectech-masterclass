@@ -72,42 +72,17 @@ export default {
     }
   },
   methods: {
-    toggleDiffView(){
-      this.$emit("update:showDiff", !this.showDiff)
-    },
     async doesDiffExist(){
-      if(!this.currentCommit || !this.prevCommit) return { commit: null }
-      var backendUrl = process.env.VUE_APP_BACKEND_URL
-      var diffUrl = `${backendUrl}/diff_check/${this.$route.params.id}/${this.currentCommit.id}/${this.prevCommit.id}`
-      var res = await fetch(diffUrl, {
-        headers: {
-          method: "GET",
-          Authorisation: `Bearer ${localStorage.getItem(TOKEN)}`,
-          "Content-type": "application/json",
-          "Access-Control-Allow-Origin": "*"
-        }
-      })
-      return await res.json()
+      console.log("Checking if diff exists...")
+      // TODO: Missing implementation
+      return { commit: null }
     },
     async requestDiff() {
-      this.loading = true
-      var backendUrl = process.env.VUE_APP_BACKEND_URL
-      console.log("diff requested for", this.currentCommit.id, this.prevCommit.id)
-      var diffUrl = `${backendUrl}/diff/${this.$route.params.id}/${this.currentCommit.id}/${this.prevCommit.id}`
-      var res = await fetch(diffUrl, {
-        headers: {
-          method: "GET",
-          Authorisation: `Bearer ${localStorage.getItem(TOKEN)}`,
-          "Content-type": "application/json",
-          "Access-Control-Allow-Origin": "*"
-        }
-      })
-      if(res.status == 200){
-        var body = await res.json()
-        console.log("diff body", res, body)
-        this.$emit("update:diffCommit", body.commit)
-      }
-      this.loading = false
+      console.log("Requesting diff...")
+      // TODO: Missing implementation
+    },
+    toggleDiffView(){
+      this.$emit("update:showDiff", !this.showDiff)
     },
     async handleCommitChange(event, value){
       this.loading = true

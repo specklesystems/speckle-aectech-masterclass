@@ -14,17 +14,7 @@ const routes = [
     component: Home,
     meta: {
       requiresAuth: true,
-      title: "Speckle AEC Tech Masterclass",
-      metaTags: [
-        {
-          name: "description",
-          content: "The Speckle AEC Tech Masterclass homepage"
-        },
-        {
-          property: "og:description",
-          content: "The Speckle AEC Tech Masterclass homepage"
-        }
-      ]
+      title: "Speckle AEC Tech Masterclass"
     }
   },
   {
@@ -57,6 +47,7 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.title) {
     document.title = to.meta.title
   }
+
   if (to.query.access_code) {
     // If the route contains an access code, exchange it
     try {

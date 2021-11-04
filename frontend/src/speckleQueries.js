@@ -1,16 +1,5 @@
-export const userInfoQuery = `
-  query {
-    user {
-      name
-      id
-      avatar
-      email
-    },
-    serverInfo {
-      name
-      company
-    }
-  }`
+// TODO: Write user + server info query
+export const userInfoQuery = ``
 
 export const streamCommitsQuery = `
   query($id: String!, $limit: Int, $cursor: String) {
@@ -50,6 +39,16 @@ export const streamSearchQuery = `
     }
   }`
 
+export const streamObjectQuery = `query($streamId: String!, $objectId: String!) {
+    stream(id: $streamId){
+        object(id: $objectId){
+            totalChildrenCount
+            id
+            speckleType
+            data
+        }
+    }
+}`
 export const latestStreamsQuery = `query {
     streams(limit: 10){
         cursor

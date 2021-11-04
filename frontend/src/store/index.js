@@ -1,16 +1,15 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import Vue from "vue"
+import Vuex from "vuex"
 
 import {
   exchangeAccessCode,
   getUserData,
   goToSpeckleAuthPage,
   speckleLogOut
-} from "@/speckleUtils";
-import router from "@/router";
+} from "@/speckleUtils"
+import router from "@/router"
 
 Vue.use(Vuex)
-
 
 export default new Vuex.Store({
   state: {
@@ -18,7 +17,7 @@ export default new Vuex.Store({
     serverInfo: null
   },
   getters: {
-    isAuthenticated: (state) => state.user != null
+    isAuthenticated: state => state.user != null
   },
   mutations: {
     setUser(state, user) {

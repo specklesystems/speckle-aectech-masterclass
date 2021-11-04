@@ -1,37 +1,6 @@
 <template lang="html">
   <v-container fill-height fluid class="pa-0 grey lighten-3">
-    <div class="float-center-top">
-      <CommitPanel
-        v-if="stream"
-        :showDiff.sync="showDiff"
-        :diffCommit.sync="diffCommit"
-        :currentCommit.sync="currentCommit"
-        :prevCommit.sync="prevCommit"
-        :commits="stream.branch.commits.items"
-      />
-    </div>
-    <v-row class="fill-height" no-gutters v-show="!showDiff">
-      <v-col cols="6">
-        <Renderer
-          :object-url="objectUrl(currentCommit)"
-          show-selection-helper
-        ></Renderer>
-      </v-col>
-      <v-col cols="6">
-        <Renderer
-          :object-url="objectUrl(prevCommit)"
-          show-selection-helper
-        ></Renderer>
-      </v-col>
-    </v-row>
-    <v-row class="fill-height" no-gutters>
-      <v-col fill-height :cols="12">
-        <Renderer
-          :object-url="objectUrl(diffCommit)"
-          show-selection-helper
-        ></Renderer>
-      </v-col>
-    </v-row>
+    TODO: Code up the stream diff view!!!
   </v-container>
 </template>
 
@@ -42,7 +11,7 @@ import CommitPanel from "@/components/commitSelector/CommitPanel.vue"
 
 export default {
   name: "StreamView",
-  components: { Renderer, CommitPanel },
+  components: {},
   data() {
     return {
       stream: null,
@@ -50,14 +19,11 @@ export default {
       prevCommit: null,
       diffCommit: null,
       serverUrl: process.env.VUE_APP_SERVER_URL,
-      showDiff: false,
-      loading: true
+      showDiff: false
     }
   },
   async mounted() {
-    if (this.streamId) {
-      this.getStream()
-    }
+    //TODO: Get stream when mounting view
   },
   computed: {
     /** @return {string} */
@@ -67,12 +33,10 @@ export default {
   },
   methods: {
     async getStream() {
-      var res = await getStreamCommits(this.streamId, 10, null)
-      this.stream = res.data.stream
+      //TODO: Missing implementation
     },
     objectUrl(commit) {
-      if (!commit) return null
-      return `${this.serverUrl}/streams/${this.stream.id}/objects/${commit.referencedObject}`
+      //TODO: Missing implementation
     }
   },
   watch: {

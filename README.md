@@ -75,6 +75,11 @@ Returns the diff commit if the operation was successfull.
 
 # Workshop pre-requisites
 
+You'll need an IDE to follow along with the code. We'll be using VSCode for the class, but any other will work too. You will also need the following extensions:
+
+- Vetur
+- Python (comes preinstalled now, but just to be safe)
+
 For the **server**, you must have:
 
 - `python` installed in your computer (at least version `3.6`, `3.9` recommended) [Download it here](https://www.python.org/downloads/)
@@ -84,7 +89,10 @@ For the **server**, you must have:
   # and then
   pip install "uvicorn[standard]"
   ```
--
+- Install `specklepy`
+  ```shell
+  pip install specklepy
+  ```
 
 For the **Vue app**:
 

@@ -60,10 +60,15 @@ export default {
   props: ["selected", "commits", "disabledId"],
   methods: {
     appInitials(sourceApplication) {
+      console.log(sourceApplication)
       switch (sourceApplication) {
-        case sourceApplication.startsWith("Rhino"):
+        case "Rhino6":
+        case "Rhino7":
           return "RH"
-        case sourceApplication.startsWith("Revit"):
+        case "Revit2019":
+        case "Revit2020":
+        case "Revit2021":
+        case "Revit2022":
           return "RVT"
         case sourceApplication.startsWith("Autocad"):
           return "ACAD"

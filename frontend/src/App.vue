@@ -83,16 +83,6 @@
               <v-icon small>mdi-account</v-icon>
             </v-list-item-icon>
           </v-list-item>
-          <v-list-item
-            link
-            href="https://speckle.systems/tutorials/revit-dash/"
-            target="_blank"
-          >
-            <v-list-item-title>Feedback</v-list-item-title>
-            <v-list-item-icon>
-              <v-icon small>mdi-message-alert-outline</v-icon>
-            </v-list-item-icon>
-          </v-list-item>
           <v-list-item link @click="$store.dispatch('logout')">
             <v-list-item-title class="error--text">Log out</v-list-item-title>
             <v-list-item-icon>

@@ -42,8 +42,8 @@ def get_diff(stream_id: str, commit_current: str, commit_previous: str, request:
         diff_commit = mesh_differ.process_diff(
             stream_id, commit_current, commit_previous)
     except Exception as e:
-        print(e.with_traceback())
-        raise HTTPException(500, e.with_traceback())
+        print(str(e))
+        raise HTTPException(500, str(e))
     return {"commit": diff_commit}
 
 
@@ -70,5 +70,5 @@ def get_diff_check(stream_id: str, commit_current: str, commit_previous: str, re
             return {"exists": False, "commit": None}
 
     except Exception as e:
-        print(e.with_traceback())
-        raise HTTPException(500, e.with_traceback())
+        print(str(e))
+        raise HTTPException(500, str(e))

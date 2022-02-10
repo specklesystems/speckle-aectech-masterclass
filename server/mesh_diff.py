@@ -69,7 +69,8 @@ class SpeckleMeshDiff:
         """Checks if a specific diff commit already exists in the diff_branch"""
         branch_commits: Branch = self.client.branch.get(
             self.stream_id, self.diff_branch, 50)
-
+        if(branch_commits is None):
+            return None
         for commit in branch_commits.commits.items:
             if commit.message == f"{self.commit_current}-{self.commit_prev}":
                 return commit
@@ -233,7 +234,7 @@ class SpeckleMeshDiff:
     @staticmethod
     def receive_data(client: SpeckleClient, stream_id: str, commit_id: str) -> Base:
         """Get the data from a commit on the Speckle server"""
-        transport = ServerTransport(client, stream_id)
+        transport = ServerTransport(stream_id, client)
 
         commit = client.commit.get(stream_id, commit_id)
         res = operations.receive(commit.referencedObject, transport)
